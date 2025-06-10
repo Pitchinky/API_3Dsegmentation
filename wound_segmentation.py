@@ -48,7 +48,7 @@ def segment_wound(obj_file):
     mask = generate_segmentation_mask(low_res_mesh, SecondSegmentation)
     mask = fill_mask_holes(low_res_mesh, mask, fill_depth=5, color_threshold=0.2, adjacency=[])
 
-    display_mesh(low_res_mesh, mask)
+    #display_mesh(low_res_mesh, mask)
 
     mask_vertex_colors = np.zeros((len(low_res_mesh.vertices), 3), dtype=np.float32)
     for i in range(len(mask)):

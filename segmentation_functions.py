@@ -1,3 +1,4 @@
+#segmentation_function.py
 from deepskin import wound_segmentation
 from deepskin import evaluate_PWAT_score
 from deepskin import wound_segmentation, evaluate_PWAT_score

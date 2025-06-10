@@ -1,4 +1,4 @@
-# segmentation_pipeline.py
+# segmentation.py
 
 import numpy as np
 import cv2
