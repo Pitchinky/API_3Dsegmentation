@@ -21,6 +21,7 @@ app.add_middleware(
 PREDEFINED_MODELS = {
     "model1": ("models/model1.obj", "models/model1.mtl", "models/model1.png"),
     "model2": ("models/model2.obj", "models/model2.mtl", "models/model2.png"),
+    "model3": ("models/model3.obj", "models/model3.mtl", "models/model3.png"),
 }
 
 @app.get("/models")
