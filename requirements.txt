@@ -1,0 +1,7 @@
+numpy
+open3d
+opencv-python
+git+https://github.com/Nico-Curti/Deepskin
+mahotas
+tensorflow>=2.8.0
+gdown

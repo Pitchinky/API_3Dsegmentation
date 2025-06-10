@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>3D Model Viewer</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      background-color: #f4f4f9;
+      color: #333;
+    }
+
+    header {
+      background: linear-gradient(135deg, #636363, #434343);
+      color: white;
+      text-align: center;
+      padding: 1rem 0;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2rem;
+    }
+
+    main {
+      max-width: 1000px;
+      margin: 2rem auto;
+      background: white;
+      border-radius: 10px;
+      padding: 2rem;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    h2, h3 {
+      color: #C1002A;
+      margin-bottom: 1rem;
+    }
+
+    form {
+      margin-bottom: 2rem;
+    }
+
+    select, input[type="file"], button {
+      display: block;
+      width: 100%;
+      max-width: 400px;
+      margin: 10px auto;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+
+    button {
+      background-color: #C1002A;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s ease-in-out;
+    }
+
+    button:hover {
+      background-color: #9c0023;
+    }
+
+    .viewers-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .viewer-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #viewer, #viewer-preview {
+      width: 100%;
+      height: 500px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #eaeaea;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    @media screen and (max-width: 900px) {
+      .viewers-container {
+        grid-template-columns: 1fr;
+      }
+      #viewer, #viewer-preview {
+        height: 400px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>3D Model Viewer with Segmentation</h1>
+  </header>
+
+  <main>
+    <h2>Import a 3D Model</h2>
+    <form id="model-form">
+      <select id="model-select">
+        <option value="">-- Import my files --</option>
+        <option value="model1">Model 1</option>
+        <option value="model2">Model 2</option>
+        <option value="model3">Model 3</option>
+        <option value="model4">Model 4</option>
+        <option value="model5">Model 5</option>
+        <option value="model6">Model 6</option>
+      </select>
+
+      <input type="file" id="obj-input" accept=".obj" />
+      <input type="file" id="png-input" accept=".png" />
+
+      <select id="segmentation-method">
+        <option value="kmeans Jay">Clustering (k-means) Jay</option>
+        <option value="projection Mathieu">Mathieu</option>
+      </select>
+
+      <button type="button" id="preview-button">Preview</button>
+      <button type="submit">Segment</button>
+    </form>
+
+    <div class="viewers-container">
+      <div class="viewer-block">
+        <h3>Preview before segmentation</h3>
+        <div id="viewer-preview"></div>
+      </div>
+      <div class="viewer-block">
+        <h3>Segmentation Result</h3>
+        <div id="viewer"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+  const form = document.getElementById("model-form");
+
+  // Fonction pour charger modèle + MTL
+  function loadModelWithMTL(objUrl, mtlUrl, containerId) {
+    const container = document.getElementById(containerId);
+    const oldCanvas = container.querySelector("canvas");
+    if (oldCanvas) oldCanvas.remove();
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setClearColor(0xf4f4f9);
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    const light = new THREE.DirectionalLight(0xffffff, 0.5);
+    light.position.set(1, 1, 1);
+    scene.add(light);
+
+    const mtlLoader = new THREE.MTLLoader();
+    mtlLoader.load(mtlUrl, function (materials) {
+      materials.preload();
+      const objLoader = new THREE.OBJLoader();
+      objLoader.setMaterials(materials);
+
+      objLoader.load(objUrl, function (object) {
+        centerAndAdd(object, scene, camera, controls);
+        animate();
+      });
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+  }
+
+  // Fonction pour charger modèle + PNG (sans MTL)
+  function loadModelWithTexture(objUrl, textureUrl, containerId) {
+    const container = document.getElementById(containerId);
+    const oldCanvas = container.querySelector("canvas");
+    if (oldCanvas) oldCanvas.remove();
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setClearColor(0xf4f4f9);
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    const light = new THREE.DirectionalLight(0xffffff, 0.5);
+    light.position.set(1, 1, 1);
+    scene.add(light);
+
+    const textureLoader = new THREE.TextureLoader();
+    textureLoader.load(textureUrl, function (texture) {
+      const objLoader = new THREE.OBJLoader();
+      objLoader.load(objUrl, function (object) {
+        object.traverse(child => {
+          if (child.isMesh) {
+            child.material = new THREE.MeshPhongMaterial({ map: texture });
+            console.log("Mesh chargé :", child.name, "UVs:", child.geometry.attributes.uv);
+          }
+        });
+        centerAndAdd(object, scene, camera, controls);
+        animate();
+      });
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+  }
+
+  // Centrage + zoom automatique
+  function centerAndAdd(object, scene, camera, controls) {
+    object.scale.set(1, 1, 1);
+    scene.add(object);
+
+    const box = new THREE.Box3().setFromObject(object);
+    const size = box.getSize(new THREE.Vector3()).length();
+    const center = box.getCenter(new THREE.Vector3());
+
+    controls.target.copy(center);
+    camera.position.set(center.x, center.y, center.z + size * 1.2);
+    camera.lookAt(center);
+  }
+
+  // Bouton "Segmenter"
+  form.addEventListener("submit", async function (event) {
+    event.preventDefault();
+    const model = document.getElementById("model-select").value;
+    const method = document.getElementById("segmentation-method").value;
+    const formData = new FormData();
+    formData.append("method", method);
+
+    if (model) {
+      formData.append("model_name", model);
+    } else {
+      const objFile = document.getElementById("obj-input").files[0];
+      const pngFile = document.getElementById("png-input").files[0];
+      if (!objFile || !pngFile) return alert("Veuillez importer un fichier .obj et un .png");
+
+      formData.append("obj_file", objFile);
+      formData.append("texture_file", pngFile);
+    }
+
+    try {
+      const res = await fetch("http://localhost:8000/segment", { method: "POST", body: formData });
+      if (!res.ok) throw new Error("Erreur API");
+
+      const data = await res.json();
+      console.log("DATA SEGMENT:", data);
+      const objUrl = "http://localhost:8000" + data.obj_url;
+      const texUrl = "http://localhost:8000" + data.texture_url;
+      const mtlUrl = data.mtl_url ? "http://localhost:8000" + data.mtl_url : null;
+
+      if (mtlUrl) {
+        loadModelWithMTL(objUrl, mtlUrl, "viewer");
+      } else {
+        loadModelWithTexture(objUrl, texUrl, "viewer");
+      }
+    } catch (err) {
+      console.error("Erreur segmentation:", err);
+      alert("Erreur lors du traitement.");
+    }
+  });
+
+  // Bouton "Prévisualiser"
+  document.getElementById("preview-button").addEventListener("click", async function () {
+    const model = document.getElementById("model-select").value;
+
+    if (model) {
+      const objUrl = `http://localhost:8000/models/${model}.obj`;
+      const mtlUrl = `http://localhost:8000/models/${model}.mtl`;
+      loadModelWithMTL(objUrl, mtlUrl, "viewer-preview");
+    } else {
+      const objFile = document.getElementById("obj-input").files[0];
+      const pngFile = document.getElementById("png-input").files[0];
+      if (!objFile || !pngFile) return alert("Veuillez importer un fichier .obj et un .png");
+
+      const formData = new FormData();
+      formData.append("obj_file", objFile);
+      formData.append("texture_file", pngFile);
+
+      try {
+        const res = await fetch("http://localhost:8000/preview", { method: "POST", body: formData });
+        if (!res.ok) throw new Error("Erreur API Preview");
+
+        const data = await res.json();
+        console.log("DATA SEGMENT:", data);
+        const objUrl = "http://localhost:8000" + data.obj_url;
+        const texUrl = "http://localhost:8000" + data.texture_url;
+        const mtlUrl = data.mtl_url ? "http://localhost:8000" + data.mtl_url : null;
+
+        if (mtlUrl) {
+          loadModelWithMTL(objUrl, mtlUrl, "viewer-preview");
+        } else {
+          loadModelWithTexture(objUrl, texUrl, "viewer-preview");
+        }
+      } catch (err) {
+        console.error("Erreur preview:", err);
+        alert("Erreur lors de la prévisualisation.");
+      }
+    }
+  });
+</script>
+
+</body>
+</html>
