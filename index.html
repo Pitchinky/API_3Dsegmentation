@@ -99,6 +99,14 @@
         height: 400px;
       }
     }
+
+    #loading-message {
+      display: none;
+      text-align: center;
+      color: #C1002A;
+      font-weight: bold;
+      margin: 1rem 0;
+    }
   </style>
 </head>
 <body>
@@ -115,15 +123,16 @@
         <option value="model3">Model 3</option>
       </select>
 
-
       <select id="segmentation-method">
-        <option value="kmeans Jay">Clustering (k-means) Jay</option>
+        <option value="kmeans Jay">Clustering (k-means)</option>
         <option value="projection Mathieu">Deepskin</option>
       </select>
 
       <button type="button" id="preview-button">Preview</button>
       <button type="submit">Segment</button>
     </form>
+
+    <div id="loading-message">Chargement...</div>
 
     <div class="viewers-container">
       <div class="viewer-block">
@@ -138,165 +147,132 @@
   </main>
 
   <script>
-  const form = document.getElementById("model-form");
+    const form = document.getElementById("model-form");
 
-  // Fonction pour charger modèle + MTL
-  function loadModelWithMTL(objUrl, mtlUrl, containerId) {
-    const container = document.getElementById(containerId);
-    const oldCanvas = container.querySelector("canvas");
-    if (oldCanvas) oldCanvas.remove();
+    function loadModelWithMTL(objUrl, mtlUrl, containerId) {
+      const container = document.getElementById(containerId);
+      const oldCanvas = container.querySelector("canvas");
+      if (oldCanvas) oldCanvas.remove();
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setClearColor(0xf4f4f9);
-    container.appendChild(renderer.domElement);
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setClearColor(0xf4f4f9);
+      container.appendChild(renderer.domElement);
 
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
+      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-    const light = new THREE.DirectionalLight(0xffffff, 0.5);
-    light.position.set(1, 1, 1);
-    scene.add(light);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+      const light = new THREE.DirectionalLight(0xffffff, 0.5);
+      light.position.set(1, 1, 1);
+      scene.add(light);
 
-    const mtlLoader = new THREE.MTLLoader();
-    mtlLoader.load(mtlUrl, function (materials) {
-      materials.preload();
-      const objLoader = new THREE.OBJLoader();
-      objLoader.setMaterials(materials);
+      const mtlLoader = new THREE.MTLLoader();
+      mtlLoader.load(mtlUrl, function (materials) {
+        materials.preload();
+        const objLoader = new THREE.OBJLoader();
+        objLoader.setMaterials(materials);
 
-      objLoader.load(objUrl, function (object) {
-        centerAndAdd(object, scene, camera, controls);
-        animate();
-      });
-    });
-
-    function animate() {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    }
-  }
-
-  // Fonction pour charger modèle + PNG (sans MTL)
-  function loadModelWithTexture(objUrl, textureUrl, containerId) {
-    const container = document.getElementById(containerId);
-    const oldCanvas = container.querySelector("canvas");
-    if (oldCanvas) oldCanvas.remove();
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setClearColor(0xf4f4f9);
-    container.appendChild(renderer.domElement);
-
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-
-    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-    const light = new THREE.DirectionalLight(0xffffff, 0.5);
-    light.position.set(1, 1, 1);
-    scene.add(light);
-
-    const textureLoader = new THREE.TextureLoader();
-    textureLoader.load(textureUrl, function (texture) {
-      const objLoader = new THREE.OBJLoader();
-      objLoader.load(objUrl, function (object) {
-        object.traverse(child => {
-          if (child.isMesh) {
-            child.material = new THREE.MeshPhongMaterial({ map: texture });
-            console.log("Mesh chargé :", child.name, "UVs:", child.geometry.attributes.uv);
-          }
+        objLoader.load(objUrl, function (object) {
+          centerAndAdd(object, scene, camera, controls);
+          animate();
         });
-        centerAndAdd(object, scene, camera, controls);
-        animate();
       });
-    });
 
-    function animate() {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    }
-  }
-
-  // Centrage + zoom automatique
-  function centerAndAdd(object, scene, camera, controls) {
-    object.scale.set(1, 1, 1);
-    scene.add(object);
-
-    const box = new THREE.Box3().setFromObject(object);
-    const size = box.getSize(new THREE.Vector3()).length();
-    const center = box.getCenter(new THREE.Vector3());
-
-    controls.target.copy(center);
-    camera.position.set(center.x, center.y, center.z + size * 1.2);
-    camera.lookAt(center);
-  }
-
-  // Bouton "Segmenter"
-  form.addEventListener("submit", async function (event) {
-    event.preventDefault();
-    const model = document.getElementById("model-select").value;
-    const method = document.getElementById("segmentation-method").value;
-    const formData = new FormData();
-    formData.append("method", method);
-
-    if (model) {
-      formData.append("model_name", model);
-    } else {
-      const objFile = document.getElementById("obj-input").files[0];
-      const pngFile = document.getElementById("png-input").files[0];
-      if (!objFile || !pngFile) return alert("Veuillez importer un fichier .obj et un .png");
-
-      formData.append("obj_file", objFile);
-      formData.append("texture_file", pngFile);
-    }
-
-    try {
-      const res = await fetch("http://localhost:8000/segment", { method: "POST", body: formData });
-      if (!res.ok) throw new Error("Erreur API");
-
-      const data = await res.json();
-      console.log("DATA SEGMENT:", data);
-      const objUrl = "http://localhost:8000" + data.obj_url;
-      const texUrl = "http://localhost:8000" + data.texture_url;
-      const mtlUrl = data.mtl_url ? "http://localhost:8000" + data.mtl_url : null;
-
-      if (mtlUrl) {
-        loadModelWithMTL(objUrl, mtlUrl, "viewer");
-      } else {
-        loadModelWithTexture(objUrl, texUrl, "viewer");
+      function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
       }
-    } catch (err) {
-      console.error("Erreur segmentation:", err);
-      alert("Erreur lors du traitement.");
     }
-  });
 
-  // Bouton "Prévisualiser"
-  document.getElementById("preview-button").addEventListener("click", async function () {
-    const model = document.getElementById("model-select").value;
+    function loadModelWithTexture(objUrl, textureUrl, containerId) {
+      const container = document.getElementById(containerId);
+      const oldCanvas = container.querySelector("canvas");
+      if (oldCanvas) oldCanvas.remove();
 
-    if (model) {
-      const objUrl = `http://localhost:8000/models/${model}.obj`;
-      const mtlUrl = `http://localhost:8000/models/${model}.mtl`;
-      loadModelWithMTL(objUrl, mtlUrl, "viewer-preview");
-    } else {
-      const objFile = document.getElementById("obj-input").files[0];
-      const pngFile = document.getElementById("png-input").files[0];
-      if (!objFile || !pngFile) return alert("Veuillez importer un fichier .obj et un .png");
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setClearColor(0xf4f4f9);
+      container.appendChild(renderer.domElement);
 
+      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+
+      scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+      const light = new THREE.DirectionalLight(0xffffff, 0.5);
+      light.position.set(1, 1, 1);
+      scene.add(light);
+
+      const textureLoader = new THREE.TextureLoader();
+      textureLoader.load(textureUrl, function (texture) {
+        const objLoader = new THREE.OBJLoader();
+        objLoader.load(objUrl, function (object) {
+          object.traverse(child => {
+            if (child.isMesh) {
+              child.material = new THREE.MeshPhongMaterial({ map: texture });
+              console.log("Mesh chargé :", child.name, "UVs:", child.geometry.attributes.uv);
+            }
+          });
+          centerAndAdd(object, scene, camera, controls);
+          animate();
+        });
+      });
+
+      function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+      }
+    }
+
+    function centerAndAdd(object, scene, camera, controls) {
+      object.scale.set(1, 1, 1);
+      scene.add(object);
+
+      const box = new THREE.Box3().setFromObject(object);
+      const size = box.getSize(new THREE.Vector3()).length();
+      const center = box.getCenter(new THREE.Vector3());
+
+      controls.target.copy(center);
+      camera.position.set(center.x, center.y, center.z + size * 1.2);
+      camera.lookAt(center);
+    }
+
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+
+      const loadingMessage = document.getElementById("loading-message");
+      loadingMessage.style.display = "block";
+
+      // 👉 Vider le viewer avant segmentation
+      document.getElementById("viewer").innerHTML = "";
+
+      const model = document.getElementById("model-select").value;
+      const method = document.getElementById("segmentation-method").value;
       const formData = new FormData();
-      formData.append("obj_file", objFile);
-      formData.append("texture_file", pngFile);
+      formData.append("method", method);
+
+      if (model) {
+        formData.append("model_name", model);
+      } else {
+        const objFile = document.getElementById("obj-input")?.files[0];
+        const pngFile = document.getElementById("png-input")?.files[0];
+        if (!objFile || !pngFile) {
+          loadingMessage.style.display = "none";
+          return alert("Veuillez importer un fichier .obj et un .png");
+        }
+        formData.append("obj_file", objFile);
+        formData.append("texture_file", pngFile);
+      }
 
       try {
-        const res = await fetch("http://localhost:8000/preview", { method: "POST", body: formData });
-        if (!res.ok) throw new Error("Erreur API Preview");
+        const res = await fetch("http://localhost:8000/segment", { method: "POST", body: formData });
+        if (!res.ok) throw new Error("Erreur API");
 
         const data = await res.json();
         console.log("DATA SEGMENT:", data);
@@ -305,17 +281,54 @@
         const mtlUrl = data.mtl_url ? "http://localhost:8000" + data.mtl_url : null;
 
         if (mtlUrl) {
-          loadModelWithMTL(objUrl, mtlUrl, "viewer-preview");
+          loadModelWithMTL(objUrl, mtlUrl, "viewer");
         } else {
-          loadModelWithTexture(objUrl, texUrl, "viewer-preview");
+          loadModelWithTexture(objUrl, texUrl, "viewer");
         }
       } catch (err) {
-        console.error("Erreur preview:", err);
-        alert("Erreur lors de la prévisualisation.");
+        console.error("Erreur segmentation:", err);
+        alert("Erreur lors du traitement.");
+      } finally {
+        loadingMessage.style.display = "none";
       }
-    }
-  });
-</script>
+    });
 
+    document.getElementById("preview-button").addEventListener("click", async function () {
+      const model = document.getElementById("model-select").value;
+
+      if (model) {
+        const objUrl = `http://localhost:8000/models/${model}.obj`;
+        const mtlUrl = `http://localhost:8000/models/${model}.mtl`;
+        loadModelWithMTL(objUrl, mtlUrl, "viewer-preview");
+      } else {
+        const objFile = document.getElementById("obj-input")?.files[0];
+        const pngFile = document.getElementById("png-input")?.files[0];
+        if (!objFile || !pngFile) return alert("Veuillez importer un fichier .obj et un .png");
+
+        const formData = new FormData();
+        formData.append("obj_file", objFile);
+        formData.append("texture_file", pngFile);
+
+        try {
+          const res = await fetch("http://localhost:8000/preview", { method: "POST", body: formData });
+          if (!res.ok) throw new Error("Erreur API Preview");
+
+          const data = await res.json();
+          const objUrl = "http://localhost:8000" + data.obj_url;
+          const texUrl = "http://localhost:8000" + data.texture_url;
+          const mtlUrl = data.mtl_url ? "http://localhost:8000" + data.mtl_url : null;
+
+          if (mtlUrl) {
+            loadModelWithMTL(objUrl, mtlUrl, "viewer-preview");
+          } else {
+            loadModelWithTexture(objUrl, texUrl, "viewer-preview");
+          }
+        } catch (err) {
+          console.error("Erreur preview:", err);
+          alert("Erreur lors de la prévisualisation.");
+        }
+      }
+    });
+  </script>
 </body>
 </html>
