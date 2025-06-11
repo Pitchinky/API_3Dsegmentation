@@ -22,6 +22,7 @@ PREDEFINED_MODELS = {
     "model1": ("models/model1.obj", "models/model1.mtl", "models/model1.png"),
     "model2": ("models/model2.obj", "models/model2.mtl", "models/model2.png"),
     "model3": ("models/model3.obj", "models/model3.mtl", "models/model3.png"),
+    "model4": ("models/model4.obj", "models/model4.mtl", "models/model4.png"),
 }
 
 @app.get("/models")
