@@ -8,6 +8,8 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="config.js"></script>
+
   <style>
     body {
       font-family: 'Poppins', sans-serif;
@@ -278,14 +280,14 @@
       }
 
       try {
-        const res = await fetch("http://localhost:8000/segment", { method: "POST", body: formData });
+        const res = await fetch("${API_BASE_URL}/segment", { method: "POST", body: formData });
         if (!res.ok) throw new Error("Erreur API");
 
         const data = await res.json();
         console.log("DATA SEGMENT:", data);
-        const objUrl = "http://localhost:8000" + data.obj_url;
-        const texUrl = "http://localhost:8000" + data.texture_url;
-        const mtlUrl = data.mtl_url ? "http://localhost:8000" + data.mtl_url : null;
+        const objUrl = "${API_BASE_URL}" + data.obj_url;
+        const texUrl = "${API_BASE_URL}" + data.texture_url;
+        const mtlUrl = data.mtl_url ? "${API_BASE_URL}" + data.mtl_url : null;
 
         if (mtlUrl) {
           loadModelWithMTL(objUrl, mtlUrl, "viewer");
@@ -304,8 +306,8 @@
       const model = document.getElementById("model-select").value;
 
       if (model) {
-        const objUrl = `http://localhost:8000/models/${model}.obj`;
-        const mtlUrl = `http://localhost:8000/models/${model}.mtl`;
+        const objUrl = `${API_BASE_URL}/models/${model}.obj`;
+        const mtlUrl = `${API_BASE_URL}/models/${model}.mtl`;
         loadModelWithMTL(objUrl, mtlUrl, "viewer-preview");
       } else {
         const objFile = document.getElementById("obj-input")?.files[0];
@@ -317,13 +319,13 @@
         formData.append("texture_file", pngFile);
 
         try {
-          const res = await fetch("http://localhost:8000/preview", { method: "POST", body: formData });
+          const res = await fetch("${API_BASE_URL}/preview", { method: "POST", body: formData });
           if (!res.ok) throw new Error("Erreur API Preview");
 
           const data = await res.json();
-          const objUrl = "http://localhost:8000" + data.obj_url;
-          const texUrl = "http://localhost:8000" + data.texture_url;
-          const mtlUrl = data.mtl_url ? "http://localhost:8000" + data.mtl_url : null;
+          const objUrl = "${API_BASE_URL}" + data.obj_url;
+          const texUrl = "${API_BASE_URL}" + data.texture_url;
+          const mtlUrl = data.mtl_url ? "${API_BASE_URL}" + data.mtl_url : null;
 
           if (mtlUrl) {
             loadModelWithMTL(objUrl, mtlUrl, "viewer-preview");
