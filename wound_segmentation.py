@@ -17,7 +17,8 @@ def segment_wound(obj_file):
     mesh.merge_close_vertices(eps=1e-8)
     print(f"{len(mesh.vertices)} vertices in the mesh after merging")
 
-    mesh.vertex_colors = create_vertex_colors(mesh, verbose=True)
+    if not mesh.has_vertex_colors:
+        mesh.vertex_colors = create_vertex_colors(mesh, verbose=True)
 
     target_number_of_triangles = 10000
     low_res_mesh = decimate_mesh(mesh, target_number_of_triangles)
