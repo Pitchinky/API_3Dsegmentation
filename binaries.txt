@@ -1,0 +1,6 @@
+python3
+pip
+opencv
+open3d
+gnuplot
+openmp

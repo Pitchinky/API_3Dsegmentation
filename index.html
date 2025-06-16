@@ -127,6 +127,9 @@
         <option value="model5">Model 5 - hand</option>
       </select>
 
+      <input type="file" id="obj-input" accept=".obj" />
+      <input type="file" id="png-input" accept=".png" />
+
       <select id="segmentation-method">
         <option value="kmeans Jay">Clustering (k-means)</option>
         <option value="projection Mathieu">Deepskin</option>
@@ -136,7 +139,7 @@
       <button type="submit">Segment</button>
     </form>
 
-    <div id="loading-message">Chargement...</div>
+    <div id="loading-message">Loading...</div>
 
     <div id="progress-bar" style="width: 100%; background: #eee; height: 20px; display: none;">
       <div id="progress-fill" style="width: 0%; height: 100%; background: #4caf50; text-align: center; color: white;">0%</div>
