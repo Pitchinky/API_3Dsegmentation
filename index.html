@@ -154,6 +154,7 @@
       <div class="viewer-block">
         <h3>Segmentation Result</h3>
         <div id="viewer"></div>
+        <p>PWAT estimé : <span id="pwat-value">...</span></p>
       </div>
     </div>
   </main>
@@ -283,14 +284,19 @@
       }
 
       try {
-        const res = await fetch("${API_BASE_URL}/segment", { method: "POST", body: formData });
+        const res = await fetch(`${API_BASE_URL}/segment`, {
+          method: "POST",
+          body: formData,
+        });
+
         if (!res.ok) throw new Error("Erreur API");
 
         const data = await res.json();
         console.log("DATA SEGMENT:", data);
-        const objUrl = "${API_BASE_URL}" + data.obj_url;
-        const texUrl = "${API_BASE_URL}" + data.texture_url;
-        const mtlUrl = data.mtl_url ? "${API_BASE_URL}" + data.mtl_url : null;
+        document.getElementById("pwat-value").innerText = data.pwat;
+        const objUrl = `${API_BASE_URL}${data.obj_url}`;
+        const texUrl = `${API_BASE_URL}${data.texture_url}`;
+        const mtlUrl = data.mtl_url ? `${API_BASE_URL}${data.mtl_url}` : null;
 
         if (mtlUrl) {
           loadModelWithMTL(objUrl, mtlUrl, "viewer");

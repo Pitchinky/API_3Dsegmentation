@@ -55,12 +55,13 @@ async def segment(
     output_dir = f"outputs/{uuid.uuid4().hex}"
     os.makedirs(output_dir, exist_ok=True)
 
-    obj_out, img_out, mtl_out = process_obj_with_texture(obj_path, texture_path, output_dir, method)
+    obj_out, img_out, mtl_out, pwat = process_obj_with_texture(obj_path, texture_path, output_dir, method)
 
     return {
         "obj_url": f"/download/{os.path.basename(output_dir)}/output.obj",
         "mtl_url": f"/download/{os.path.basename(output_dir)}/material.mtl",
-        "texture_url": f"/download/{os.path.basename(output_dir)}/segmented_texture.png"
+        "texture_url": f"/download/{os.path.basename(output_dir)}/segmented_texture.png",
+        "pwat": pwat
     }
 
 @app.post("/preview")

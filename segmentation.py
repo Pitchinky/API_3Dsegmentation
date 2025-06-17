@@ -24,6 +24,7 @@ def process_obj_with_texture(obj_path, texture_path, output_dir, method="kmeans 
 
     if method == "kmeans Jay":
         image = cv2.imread(texture_path)
+        pwat=None
         if image is None:
             raise FileNotFoundError(f"Texture not found: {texture_path}")
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -46,7 +47,7 @@ def process_obj_with_texture(obj_path, texture_path, output_dir, method="kmeans 
                 f_out.write('mtllib material.mtl\n')
 
     elif method == "projection Mathieu":
-        obj_out, texture_out, _ = segment_wound(obj_path)
+        obj_out, texture_out, pwat = segment_wound(obj_path)
 
         # Vérifie que la texture segmentée a la même taille que l'originale
         original_texture = cv2.imread(texture_path)
@@ -90,7 +91,7 @@ def process_obj_with_texture(obj_path, texture_path, output_dir, method="kmeans 
         f.write("illum 2\n")
         f.write("map_Kd segmented_texture.png\n")
 
-    return output_obj_path, mask_path, mtl_path
+    return output_obj_path, mask_path, mtl_path, pwat
 
 
 
