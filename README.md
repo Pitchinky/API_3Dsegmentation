@@ -22,3 +22,4 @@ Make sure you have Python 3.10 installed, then run:
 
 ```bash
 pip install -r requirements.txt
+uvicorn main:app --reload
