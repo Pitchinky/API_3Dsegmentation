@@ -1,12 +1,4 @@
 # segmentation.py
-
-import numpy as np
-import cv2
-import os
-from sklearn.cluster import KMeans
-from wound_segmentation import segment_wound
-import matplotlib.pyplot as plt
-
 import numpy as np
 import cv2
 import os
@@ -15,7 +7,7 @@ from wound_segmentation import segment_wound
 import matplotlib.pyplot as plt
 import shutil
 
-def process_obj_with_texture(obj_path, texture_path, output_dir, method="kmeans Jay"):
+def process_obj_with_texture(obj_path, texture_path, output_dir, method="kmeans Jay",mtl_path=None):
     print(f"Segmentation method: {method}")
     os.makedirs(output_dir, exist_ok=True)
 
@@ -66,6 +58,7 @@ def process_obj_with_texture(obj_path, texture_path, output_dir, method="kmeans 
         output_obj_path = os.path.join(output_dir, "output.obj")
         shutil.copyfile(obj_out, output_obj_path)
 
+        """
         # Copie/écrit le MTL
         mtl_path = os.path.join(output_dir, "material.mtl")
         with open(mtl_path, 'w') as f:
@@ -75,7 +68,7 @@ def process_obj_with_texture(obj_path, texture_path, output_dir, method="kmeans 
             f.write("Ks 0.000 0.000 0.000\n")
             f.write("d 1.0\n")
             f.write("illum 2\n")
-            f.write("map_Kd segmented_texture.png\n")
+            f.write("map_Kd segmented_texture.png\n")"""
 
     else:
         raise ValueError(f"Méthode inconnue: {method}")

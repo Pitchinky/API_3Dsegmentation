@@ -120,6 +120,7 @@
     <h2>Import a 3D Model</h2>
     <form id="model-form">
       <select id="model-select">
+        <option value="">-- Import my files --</option>
         <option value="model1">Model 1 - Leg </option>
         <option value="model2">Model 2</option>
         <option value="model3">Model 3 - Arm </option>
@@ -129,6 +130,7 @@
 
       <input type="file" id="obj-input" accept=".obj" />
       <input type="file" id="png-input" accept=".png" />
+      <input type="file" id="mtl-input" accept=".mtl" />
 
       <select id="segmentation-method">
         <option value="kmeans Jay">Clustering (k-means)</option>
@@ -275,12 +277,14 @@
       } else {
         const objFile = document.getElementById("obj-input")?.files[0];
         const pngFile = document.getElementById("png-input")?.files[0];
+        const mtlFile = document.getElementById("mtl-input")?.files[0];
         if (!objFile || !pngFile) {
           loadingMessage.style.display = "none";
           return alert("Veuillez importer un fichier .obj et un .png");
         }
         formData.append("obj_file", objFile);
         formData.append("texture_file", pngFile);
+        formData.append("mtl_file", mtlFile);
       }
 
       try {
@@ -328,13 +332,16 @@
         formData.append("texture_file", pngFile);
 
         try {
-          const res = await fetch("${API_BASE_URL}/preview", { method: "POST", body: formData });
+         const res = await fetch(`${API_BASE_URL}/preview`, { method: "POST", body: formData });
+
           if (!res.ok) throw new Error("Erreur API Preview");
 
+          
           const data = await res.json();
-          const objUrl = "${API_BASE_URL}" + data.obj_url;
-          const texUrl = "${API_BASE_URL}" + data.texture_url;
-          const mtlUrl = data.mtl_url ? "${API_BASE_URL}" + data.mtl_url : null;
+          const objUrl = `${API_BASE_URL}${data.obj_url}`;
+          const texUrl = `${API_BASE_URL}${data.texture_url}`;
+          const mtlUrl = data.mtl_url ? `${API_BASE_URL}${data.mtl_url}` : null;
+
 
           if (mtlUrl) {
             loadModelWithMTL(objUrl, mtlUrl, "viewer-preview");

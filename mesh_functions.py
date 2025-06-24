@@ -347,6 +347,7 @@ def project_mesh(mesh, views={"front": [0, 0]}, RES=256, output_dir=".", filenam
         if non_bg_ratio >= NON_BG_THRESHOLD:
             # Save the image.
             file_path = os.path.join(output_dir, f"{filename}_{view_name}.png")
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
             plt.imsave(file_path, image)
             print(f"Saving {file_path} ({non_bg_ratio*100:.2f}% visibility)...")
             proj = Projection(mesh=mesh, mask=visibility_mask, file_path=file_path, angle=view_name, non_bg_ratio=non_bg_ratio, depth_buffer=depth_buffer, vertex_map=voxel_to_vertices)
